@@ -22,3 +22,6 @@ temp_capture.jpg
 .idea/
 *.swp
 *.swo
+
+.gitignore
+desktop.ini
