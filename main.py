@@ -1,26 +1,24 @@
-import cv2
 import os
+import io
+from fastapi import FastAPI, File, UploadFile, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 import google.genai as genai
 from dotenv import load_dotenv
 from PIL import Image
-from rich.console import Console
-from rich.panel import Panel
-from rich.markdown import Markdown
-from rich.live import Live
-from rich.text import Text
+from pydantic import BaseModel
 
-# Initialize Rich console
-console = Console()
-
-# Load environment variables from .env file
 load_dotenv()
 
-# Configure the Gemini API key
+app = FastAPI(title="CalCam")
+templates = Jinja2Templates(directory="templates")
+
+current_chat = None
+
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    console.print("[bold red]Error: GEMINI_API_KEY not found in environment variables.[/bold red]")
-    console.print("Please set it in a .env file.")
-    exit(1)
+    raise RuntimeError("GEMINI_API_KEY not found in environment variables. Please set it in a .env file.")
 
 client = genai.Client(api_key=api_key)
 
@@ -47,122 +45,117 @@ PROMPT = (
     "   - Use 'integral of ... dx' for integrals\n"
     "   - Use SQRT() for square roots\n"
     "3. Use **bold** for key mathematical terms and the final answer.\n"
-    "4. Keep your sentences conversational, structured, and easy to read in a narrow console window."
+    "4. Keep your sentences conversational, structured, and easy to read in a narrow console window.\n\n"
+    "⚠️ RETURN FORMAT:\n"
+    "You must return ONLY a raw JSON object with two keys: 'topic' (a short 1-3 word classification like 'Linear Algebra' or 'Calculus') and 'markdown' (your complete response text formatted with Markdown as requested above)."
 )
 
-def solve_math_problem(image_path):
-    console.print("\n[bold cyan]🔍 Sending image to Gemini AI...[/bold cyan]")
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html")
+
+@app.post("/api/solve")
+async def solve_math_problem(file: UploadFile = File(...)):
+    global current_chat
     try:
-        # Load the image using PIL
-        img = Image.open(image_path)
+        # Load the image using PIL from the uploaded file bytes
+        contents = await file.read()
+        img = Image.open(io.BytesIO(contents))
         
+        # Use simple Generation Config to enforce JSON
+        import json
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=[PROMPT, img]
+            contents=[PROMPT, img],
+            config=genai.types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
         
-        # Clean up any accidental LaTeX/MathJax delimiters if Gemini still uses them
-        clean_text = response.text.replace("$$", "").replace("$", "")
-        
-        # Format the response using Markdown
-        md = Markdown(clean_text)
-        panel = Panel(
-            md,
-            title="[bold green]🧑‍🏫 Teacher's Response[/bold green]",
-            subtitle="[italic white]Smart Chalkboard Assistant[/italic white]",
-            border_style="bright_blue",
-            padding=(1, 2)
-        )
-        console.print(panel)
-        # The Study Guide Exporter
-        with open("Math_Study_Notes.md", "a", encoding="utf-8") as file:
-            file.write(f"## Solved Problem\n\n")
-            file.write(f"{clean_text}\n\n---\n\n")
-        console.print("[italic green]Tutor's notes saved to Math_Study_Notes.md![/italic green]")
-        console.print("\n")
-        
-        # Open a chat session with the previous prompt and image
-        chat = client.chats.create(model='gemini-2.5-flash')
-        chat.send_message([PROMPT, img]) # The AI's initial memory
-
-        while True:
-            # Ask the user if they have a follow up question
-            user_question = input("\nRaise your hand (Type a follow-up question, or press Enter to continue): ")
-            
-            if user_question.strip() == "":
-                break # Exit the loop if they just press Enter
+        try:
+            # Strip markdown formatting that Gemma might wrap the JSON string with
+            raw_text = response.text.strip()
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:]
+            elif raw_text.startswith("```"):
+                raw_text = raw_text[3:]
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
                 
-            console.print("\n[bold cyan]🤔 Thinking...[/bold cyan]")
-            follow_up_response = chat.send_message(user_question)
+            data = json.loads(raw_text.strip())
+            topic = data.get("topic", "General Math")
+            clean_text = data.get("markdown", "")
             
-            # Print the AI's clarification
-            console.print(Panel(
-                Markdown(follow_up_response.text),
-                title="[bold green]🧑‍🏫 Teacher's Clarification[/bold green]",
-                border_style="green"
-            ))
-
+            if not clean_text and topic:
+                # If the json structure didn't have markdown but failed fallback
+                clean_text = response.text
+                
+        except Exception as e:
+            # If parsing truly failed, simply pass the raw text to the frontend
+            topic = "General Math"
+            clean_text = response.text
+                
+        # Clean up any accidental LaTeX/MathJax delimiters if AI still uses them
+        clean_text = clean_text.replace("$$", "").replace("$", "")
+        
+        # Initialize the stateful Chat memory
+        current_chat = client.chats.create(model='gemini-2.5-flash')
+        try:
+            current_chat.send_message([PROMPT, img])
+        except:
+            # If the specific GenAI architecture denies multimodal objects in chats,
+            # fallback to seeding the chat memory with pure text context!
+            fallback_prompt = (
+                f"{PROMPT}\n\n"
+                f"[SYSTEM NOTE: The user provided an image. You successfully processed it. "
+                f"Here is your own generated step-by-step response to use as active context for their follow-up questions:]\n\n"
+                f"{clean_text}"
+            )
+            try:
+                current_chat.send_message(fallback_prompt)
+            except:
+                pass
+        
+        return JSONResponse(content={"markdown": clean_text, "topic": topic})
+        
     except Exception as e:
-        console.print(f"\n[bold red]❌ Error communicating with Gemini API:[/bold red] {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
-def main():
-    # Attempt to open the default webcam
-    cap = cv2.VideoCapture(0)
+class ChatMessage(BaseModel):
+    message: str
 
-    if not cap.isOpened():
-        console.print("[bold red]Error: Could not access the webcam.[/bold red]")
-        console.print("Make sure another program is not using it.")
-        return
-
-    # Welcome screen
-    welcome_text = Text.from_markup(
-        "Welcome to [bold magenta]Smart Chalkboard[/bold magenta]! 🎓\n\n"
-        "Controls:\n"
-        "  [reverse white] SPACE [/reverse white] - Capture and Solve\n"
-        "  [reverse red]   Q   [/reverse red] - Quit Application"
-    )
-    console.print(Panel(welcome_text, border_style="cyan", padding=(1, 5)))
-
-    temp_image_path = "temp_capture.jpg"
-
+@app.post("/api/chat")
+async def send_chat_message(msg: ChatMessage):
+    global current_chat
+    if not current_chat:
+        return JSONResponse(content={"error": "Start by capturing a problem first!"}, status_code=400)
+    
     try:
-        while True:
-            ret, frame = cap.read()
-            # Add a Heads-Up Display (HUD) to the live video
-            cv2.putText(frame, "SMART CHALKBOARD ACTIVE", (10, 30), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-            cv2.putText(frame, "Press SPACE to Solve | Press Q to Quit", (10, 60), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-            if not ret:
-                console.print("[bold red]Failed to grab frame. Exiting...[/bold red]")
-                break
+        response = current_chat.send_message(msg.message)
+        
+        # Try to parse the response if the model is still returning JSON dict instances natively!
+        import json
+        raw_text = response.text.strip()
+        if raw_text.startswith("```json"):
+            raw_text = raw_text[7:]
+        elif raw_text.startswith("```"):
+            raw_text = raw_text[3:]
+        if raw_text.endswith("```"):
+            raw_text = raw_text[:-3]
 
-            cv2.imshow('Smart Chalkboard - Live Feed', frame)
-            key = cv2.waitKey(1) & 0xFF
+        try:
+            data = json.loads(raw_text.strip())
+            clean_text = data.get("markdown", "")
+            if not clean_text:
+                clean_text = response.text
+        except:
+            clean_text = response.text
 
-            if key == ord('q'):
-                console.print("\n[bold yellow]👋 Exiting...[/bold yellow]")
-                break
-            
-            elif key == 32:  # Space
-                console.print("\n[bold green]📸 Capturing frame...[/bold green]")
-                cv2.imwrite(temp_image_path, frame)
-                
-                # Process the problem
-                solve_math_problem(temp_image_path)
-                
-                # Clean up
-                if os.path.exists(temp_image_path):
-                    try:
-                        os.remove(temp_image_path)
-                    except OSError:
-                        pass
-                    
-                console.print("[italic blue]Feed resumed. Press [SPACE] to capture or [Q] to quit.[/italic blue]")
-
-    finally:
-        cap.release()
-        cv2.destroyAllWindows()
+        clean_text = clean_text.replace("$$", "").replace("$", "")
+        return JSONResponse(content={"markdown": clean_text})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 if __name__ == "__main__":
-    main()
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <title>CalCam</title>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#b6e2ff",
+                        "error": "#ffb4ab",
+                        "surface-variant": "#2d3449",
+                        "tertiary-fixed": "#c4e7ff",
+                        "inverse-primary": "#006877",
+                        "on-background": "#dae2fd",
+                        "surface-container-lowest": "#060e20",
+                        "surface-container-low": "#131b2e",
+                        "on-primary-fixed-variant": "#004e5a",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "secondary": "#ddb7ff",
+                        "on-secondary-fixed-variant": "#6900b3",
+                        "primary-fixed-dim": "#2fd9f4",
+                        "on-surface": "#dae2fd",
+                        "on-secondary": "#490080",
+                        "on-surface-variant": "#bbc9cd",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#68cbff",
+                        "inverse-surface": "#dae2fd",
+                        "background": "#0b1326",
+                        "surface-container-high": "#222a3d",
+                        "surface-tint": "#2fd9f4",
+                        "on-error": "#690005",
+                        "on-tertiary": "#00354a",
+                        "on-primary": "#00363e",
+                        "on-secondary-fixed": "#2c0051",
+                        "secondary-fixed-dim": "#ddb7ff",
+                        "on-tertiary-fixed": "#001e2c",
+                        "on-secondary-container": "#d6a9ff",
+                        "primary": "#8aebff",
+                        "outline": "#859397",
+                        "inverse-on-surface": "#283044",
+                        "surface-container-highest": "#2d3449",
+                        "on-tertiary-container": "#005574",
+                        "outline-variant": "#3c494c",
+                        "primary-fixed": "#a2eeff",
+                        "secondary-container": "#6f00be",
+                        "error-container": "#93000a",
+                        "surface-bright": "#31394d",
+                        "surface-container": "#171f33",
+                        "primary-container": "#22d3ee",
+                        "on-primary-container": "#005763",
+                        "surface": "#0b1326",
+                        "on-primary-fixed": "#001f25",
+                        "surface-dim": "#0b1326",
+                        "secondary-fixed": "#f0dbff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background min-h-screen selection:bg-primary/30">
+    <!-- TopNavBar -->
+    <nav
+        class="fixed top-0 w-full z-50 bg-[#0b1326]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,31,37,0.06)] flex justify-between items-center px-6 py-4 w-full">
+        <div class="flex items-center gap-8">
+            <span class="text-4xl font-bold tracking-tighter text-[#8aebff] font-headline">CalCam</span>
+            <div class="hidden md:flex items-center gap-6">
+                <button id="toggle-sidebar-btn"
+                    class="text-slate-400 font-medium hover:text-[#ddb7ff] transition-colors duration-300 flex items-center gap-2"><span
+                        class="material-symbols-outlined text-sm">menu_open</span> Sidebar</button>
+                <button id="toggle-tutor-btn"
+                    class="text-slate-400 font-medium hover:text-[#ddb7ff] transition-colors duration-300 flex items-center gap-2">Tutor
+                    <span class="material-symbols-outlined text-sm">dock_to_right</span></button>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span
+                class="hidden sm:inline text-xs font-label uppercase tracking-widest text-[#8aebff] opacity-80">Status:
+                Online</span>
+            <button class="text-[#8aebff] active:scale-95 transition-transform">
+                <span class="material-symbols-outlined text-3xl" data-icon="account_circle">account_circle</span>
+            </button>
+        </div>
+    </nav>
+    <!-- SideNavBar (Mobile hidden, Desktop present as per JSON) -->
+    <aside
+        class="fixed left-0 top-0 h-full w-64 hidden lg:flex flex-col p-4 gap-4 bg-[#060e20] bg-gradient-to-r from-[#060e20] to-[#0b1326] pt-24 z-40">
+        <div class="flex items-center gap-3 px-2 mb-6">
+            <div
+                class="w-10 h-10 rounded-xl overflow-hidden bg-surface-container-high border border-outline-variant/20">
+                <img alt="User Profile"
+                    data-alt="User Profile avatar: wise academic scholar with glowing digital circuits on skin, futuristic dark aesthetic"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK86I4sDT4w7CMBzsBYeZcWhCbwNQgTyeKAsRhRu0A7T2MtUuUhCUFtEMcO5vlKUmRmfkW-cApSn8MKDeQKRO61RfVQjl5N1lWTut09mw0CAL_yEMMVoIJWxAlZlYdFqB81cPM0RDRn67tzN3un3xsYjkqabcP42565ePllAJJUssQBdQ3PLrLleQXps1FFE5wiaW3A0hCkUhz-jhZsX32BMvBBioj2-O5Gq26tbzhtKZuKoL_E0XGeyp33JdD5C7scr-pCJ1xJx3y" />
+            </div>
+            <div>
+                <p class="text-[#8aebff] font-bold text-sm font-label">The Scholar</p>
+            </div>
+        </div>
+        <nav class="flex flex-col gap-2">
+            <a class="flex items-center gap-3 px-4 py-3 text-[#8aebff] font-bold bg-[#131b2e] rounded-xl hover:translate-x-1 duration-200"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                <span class="text-sm tracking-wide">Dashboard</span>
+            </a>
+            </a>
+        </nav>
+        <button id="new-session-btn"
+            class="mt-auto bg-gradient-to-br from-primary to-primary-container text-on-primary-container font-headline font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(138,235,255,0.2)] active:scale-95 transition-all">
+            New Session
+        </button>
+    </aside>
+    <!-- Main Content Area -->
+    <main id="main-content"
+        class="pt-24 pb-6 px-6 lg:pl-72 lg:h-screen lg:max-h-screen lg:overflow-hidden flex flex-col lg:flex-row gap-8 transition-all duration-300">
+        <!-- Left Column: The Camera Interface (50%) -->
+        <section id="camera-section" class="lg:w-[50%] flex flex-col gap-6 transition-all duration-300">
+            <header>
+                <h1 class="text-4xl font-extrabold tracking-tight text-on-surface font-headline mb-1">Camera Interface
+                </h1>
+                <p class="text-on-surface-variant font-body">Position your work within the frame for instant analysis.
+                </p>
+            </header>
+            <div
+                class="relative aspect-video w-full rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant/10 shadow-[0_32px_64px_rgba(0,31,37,0.1)] group">
+                <!-- Video Placeholder -->
+                <div class="absolute inset-0 z-0">
+                    <video id="webcam-video" autoplay playsinline
+                        class="w-full h-full object-cover transition-all duration-700"></video>
+                    <img alt="Camera Feed" style="display: none;"
+                        class="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 transition-all duration-700"
+                        data-alt="First-person view of a mathematics notebook under soft blue atmospheric lighting with futuristic digital HUD scanning overlays"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuASVVIp8wVHn8ltd573YpTBv8S5hJYXSP1czyayAXAB4Op_5wLC36tXIo5DSyZ_gQq4uXhrPFL38dgic-3FoSPTXkZM5rFUmByynu15bLbRnDn_mXQL6ycK9Q8TMK0PMYcgq9eCIabo6LgOlo0EM-igFp4-hNSTD4WFnPRJ4AiXUit6JeVmnKhMt3duQ0Iev-0HZZ-vw6sZJ62GAKM7KDyI4AsJUXQBV378nw5Lu6GK25hrbaV1PTp409jwFlwPlXUuw_-m6YE3JvWj" />
+                </div>
+                <!-- HUD Overlays Removed -->
+            </div>
+            <button id="capture-solve-btn"
+                class="group relative w-full overflow-hidden rounded-2xl p-px bg-gradient-to-r from-primary via-secondary to-primary active:scale-[0.98] transition-transform shadow-[0_0_30px_rgba(138,235,255,0.15)]">
+                <div
+                    class="relative bg-surface-container-lowest hover:bg-transparent transition-colors duration-300 py-6 px-8 rounded-[23px] flex items-center justify-center gap-4">
+                    <span class="material-symbols-outlined text-3xl text-primary group-hover:text-on-primary-container"
+                        data-icon="photo_camera" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+                    <span
+                        class="text-2xl font-extrabold font-headline tracking-tight text-on-surface group-hover:text-on-primary-container">Capture
+                        &amp; Solve</span>
+                </div>
+            </button>
+            <!-- Learning Stats Bento -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div class="bg-surface-container p-6 rounded-2xl border border-outline-variant/10">
+                    <p class="text-on-surface-variant text-xs uppercase tracking-widest font-label mb-2">Problems Solved
+                    </p>
+                    <p id="problems-solved-count" class="text-3xl font-headline font-bold text-primary">0</p>
+                </div>
+                <div class="bg-surface-container p-6 rounded-2xl border border-outline-variant/10 md:col-span-1">
+                    <p class="text-on-surface-variant text-xs uppercase tracking-widest font-label mb-2">Current Focus
+                    </p>
+                    <p id="current-focus-topic" class="text-xl font-headline font-bold text-on-surface">Waiting for
+                        input...</p>
+                </div>
+            </div>
+        </section>
+        <!-- Right Column: The AI Tutor Panel (50%) -->
+        <section id="ai-section"
+            class="lg:w-[50%] flex flex-col h-full max-h-full transition-all duration-300 overflow-hidden">
+            <div
+                class="flex-1 bg-surface-container-low/50 backdrop-blur-lg rounded-3xl border border-outline-variant/10 flex flex-col overflow-hidden shadow-2xl">
+                <header
+                    class="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container">
+                    <div>
+                        <h2 class="text-xl font-bold font-headline text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary"
+                                data-icon="psychology">psychology</span>
+                            Teacher's Response
+                        </h2>
+                    </div>
+                </header>
+                <div id="ai-tutor-panel" class="p-8 overflow-y-auto space-y-8 flex-1">
+                    <!-- The Question -->
+                    <div class="bg-surface-container-high/40 p-6 rounded-2xl border-l-4 border-primary">
+                        <p class="text-xs text-primary font-label uppercase tracking-widest mb-2">Detected Problem</p>
+                        <p class="text-2xl font-headline font-bold italic tracking-wide text-on-surface">2x + 4 = 10</p>
+                    </div>
+                    <!-- Step by Step -->
+                    <div class="space-y-10 prose prose-invert">
+                        <div class="relative pl-10">
+                            <span
+                                class="absolute left-0 top-0 w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center text-xs font-bold text-secondary">01</span>
+                            <h3 class="text-lg font-bold font-headline text-on-surface m-0 mb-2">Isolate the Variable
+                                Term</h3>
+                            <p class="text-on-surface-variant leading-relaxed font-body text-sm">
+                                To begin, we want the term with <span class="text-primary font-mono">x</span> all by
+                                itself. We subtract <span class="text-secondary font-mono">4</span> from both sides of
+                                the equation to cancel it out on the left.
+                            </p>
+                            <div
+                                class="mt-3 py-2 px-4 bg-surface-container-lowest rounded-xl font-mono text-sm border border-outline-variant/5">
+                                2x + 4 - 4 = 10 - 4
+                                <br />
+                                <span class="text-primary">2x = 6</span>
+                            </div>
+                        </div>
+                        <div class="relative pl-10">
+                            <span
+                                class="absolute left-0 top-0 w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center text-xs font-bold text-secondary">02</span>
+                            <h3 class="text-lg font-bold font-headline text-on-surface m-0 mb-2">Solve for X</h3>
+                            <p class="text-on-surface-variant leading-relaxed font-body text-sm">
+                                Now, divide both sides by <span class="text-secondary font-mono">2</span> to find the
+                                value of <span class="text-primary font-mono">x</span>. This undoes the multiplication.
+                            </p>
+                            <div
+                                class="mt-3 py-2 px-4 bg-surface-container-lowest rounded-xl font-mono text-sm border border-outline-variant/5">
+                                (2x / 2) = (6 / 2)
+                                <br />
+                                <span class="text-primary font-bold text-lg">x = 3</span>
+                            </div>
+                        </div>
+                        <!-- Progress Aura / Completion -->
+                        <div
+                            class="flex flex-col items-center justify-center py-8 bg-surface-container-highest/20 rounded-2xl border border-dashed border-outline-variant/20">
+                            <div class="w-24 h-24 rounded-full flex items-center justify-center relative mb-4">
+                                <div class="absolute inset-0 rounded-full border-4 border-outline-variant/10"></div>
+                                <div
+                                    class="absolute inset-0 rounded-full border-4 border-t-primary border-r-secondary animate-[spin_3s_linear_infinite]">
+                                </div>
+                                <span class="material-symbols-outlined text-3xl text-primary" data-icon="check_circle"
+                                    style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            </div>
+                            <p class="font-headline font-bold text-on-surface">Solution Verified</p>
+                            <p class="text-xs text-on-surface-variant font-label tracking-widest mt-1 uppercase">Concept
+                                Mastered: Linear Basics</p>
+                        </div>
+                    </div>
+                </div>
+                <footer class="p-6 bg-surface-container border-t border-outline-variant/10">
+                    <div class="flex gap-2">
+                        <input id="chat-input"
+                            class="flex-1 bg-surface-container-lowest border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/40 placeholder:text-slate-600 transition-all"
+                            placeholder="Ask a follow-up question..." type="text" />
+                        <button id="chat-send-btn"
+                            class="bg-primary text-on-primary px-4 rounded-xl active:scale-95 transition-transform">
+                            <span class="material-symbols-outlined" data-icon="send">send</span>
+                        </button>
+                    </div>
+                </footer>
+            </div>
+        </section>
+    </main>
+    <!-- Contextual FAB (Suppressed on Dashboard as it has primary buttons in center) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const videoElement = document.getElementById('webcam-video');
+        const captureButton = document.getElementById('capture-solve-btn');
+        const aiResponseContainer = document.getElementById('ai-tutor-panel');
+        const problemsSolvedEl = document.getElementById('problems-solved-count');
+        const currentFocusEl = document.getElementById('current-focus-topic');
+
+        let solvedCount = 0;
+
+        // Toggle logic
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        const toggleTutorBtn = document.getElementById('toggle-tutor-btn');
+        const sidebar = document.querySelector('aside');
+        const mainContent = document.getElementById('main-content');
+        const cameraSection = document.getElementById('camera-section');
+        const aiSection = document.getElementById('ai-section');
+
+        let sidebarOpen = true;
+        let tutorOpen = true;
+
+        if (toggleSidebarBtn) {
+            toggleSidebarBtn.addEventListener('click', () => {
+                sidebarOpen = !sidebarOpen;
+                if (sidebarOpen) {
+                    sidebar.classList.remove('hidden');
+                    sidebar.classList.add('lg:flex');
+                    mainContent.classList.add('lg:pl-72');
+                    mainContent.classList.remove('lg:pl-6');
+                } else {
+                    sidebar.classList.add('hidden');
+                    sidebar.classList.remove('lg:flex');
+                    mainContent.classList.remove('lg:pl-72');
+                    mainContent.classList.add('lg:pl-6');
+                }
+            });
+        }
+
+        if (toggleTutorBtn) {
+            toggleTutorBtn.addEventListener('click', () => {
+                tutorOpen = !tutorOpen;
+                if (tutorOpen) {
+                    aiSection.style.display = 'flex';
+                    cameraSection.classList.remove('lg:w-full');
+                    cameraSection.classList.add('lg:w-[50%]');
+                    aiSection.classList.add('lg:w-[50%]');
+                } else {
+                    aiSection.style.display = 'none';
+                    cameraSection.classList.remove('lg:w-[50%]');
+                    cameraSection.classList.add('lg:w-full');
+                    aiSection.classList.remove('lg:w-[50%]');
+                }
+            });
+        }
+
+        // New session logic
+        const newSessionBtn = document.getElementById('new-session-btn');
+        if (newSessionBtn) {
+            newSessionBtn.addEventListener('click', () => {
+                aiResponseContainer.innerHTML = `
+                <div class="bg-surface-container-high/40 p-6 rounded-2xl border-l-4 border-primary">
+                    <p class="text-xs text-primary font-label uppercase tracking-widest mb-2">Ready</p>
+                    <p class="text-2xl font-headline font-bold italic tracking-wide text-on-surface">Awaiting Question...</p>
+                </div>
+            `;
+                currentFocusEl.innerText = "Waiting for input...";
+            });
+        }
+
+        // Start webcam
+        async function startWebcam() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing webcam:", err);
+                alert("Could not access the webcam. Please ensure permissions are granted.");
+            }
+        }
+
+        startWebcam();
+
+        // Setup Hidden Canvas
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        captureButton.addEventListener('click', async () => {
+            if (!videoElement.videoWidth) return;
+
+            // Visual feedback
+            captureButton.style.opacity = '0.5';
+
+            // Show loading state in AI panel
+            const loadingHtml = `
+            <div class="flex flex-col items-center justify-center p-8 h-full">
+                <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p class="text-primary font-headline animate-pulse">Thinking...</p>
+            </div>
+        `;
+            aiResponseContainer.innerHTML = loadingHtml;
+
+            // Downscale image to max 800px coordinate to drastically speed up API processing
+            const maxDim = 800;
+            let w = videoElement.videoWidth;
+            let h = videoElement.videoHeight;
+            if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                    h = Math.round((h * maxDim) / w);
+                    w = maxDim;
+                } else {
+                    w = Math.round((w * maxDim) / h);
+                    h = maxDim;
+                }
+            }
+
+            // Draw video frame to canvas
+            canvas.width = w;
+            canvas.height = h;
+            context.drawImage(videoElement, 0, 0, w, h);
+
+            // Convert to blob and send to backend
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'capture.jpg');
+
+                try {
+                    const response = await fetch('/api/solve', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Increment and update solved count
+                        solvedCount++;
+                        problemsSolvedEl.innerText = solvedCount;
+
+                        // Update Focus
+                        if (data.topic) {
+                            currentFocusEl.innerText = data.topic;
+                        }
+
+                        // Update AI Panel with markdown text
+                        const htmlText = marked.parse(data.markdown || "");
+                        aiResponseContainer.innerHTML = `
+                        <div class="space-y-4 prose prose-invert max-w-none text-on-surface-variant font-body text-sm py-4">
+                            ${htmlText}
+                        </div>
+                    `;
+                    } else {
+                        aiResponseContainer.innerHTML = `<p class="text-error font-body">Error: ${data.error}</p>`;
+                    }
+                } catch (err) {
+                    console.error("Error sending image:", err);
+                    aiResponseContainer.innerHTML = `<p class="text-error font-body">Failed to connect to server.</p>`;
+                } finally {
+                    captureButton.style.opacity = '1';
+                }
+            }, 'image/jpeg', 0.8);
+        });
+
+        // Chat functionality
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+
+        async function sendChatMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            // Append user HTML immediately
+            chatInput.value = "";
+            aiResponseContainer.innerHTML += `
+            <div class="bg-surface-container-high/40 p-6 rounded-2xl border-l-4 border-secondary mt-6">
+                <p class="text-xs text-secondary font-label uppercase tracking-widest mb-2">You</p>
+                <p class="text-lg font-body text-on-surface">${text}</p>
+            </div>
+        `;
+
+            // Append loading UI
+            const loadId = 'chat-load-' + Date.now();
+            aiResponseContainer.innerHTML += `
+            <div id="${loadId}" class="flex gap-3 items-center mt-6 p-4">
+                <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-primary font-headline animate-pulse">Thinking...</p>
+            </div>
+        `;
+            aiResponseContainer.scrollTop = aiResponseContainer.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await response.json();
+
+                document.getElementById(loadId)?.remove();
+
+                if (response.ok) {
+                    const htmlText = marked.parse(data.markdown || "");
+                    aiResponseContainer.innerHTML += `
+                    <div class="space-y-4 prose prose-invert max-w-none text-on-surface-variant font-body text-sm py-4 mt-2">
+                        ${htmlText}
+                    </div>
+                `;
+                } else {
+                    aiResponseContainer.innerHTML += `<p class="text-error font-body mt-4">Error: ${data.error}</p>`;
+                }
+            } catch (err) {
+                console.error("Error connecting to chat API:", err);
+                document.getElementById(loadId)?.remove();
+                aiResponseContainer.innerHTML += `<p class="text-error font-body mt-4">Failed to connect to chat API.</p>`;
+            }
+            aiResponseContainer.scrollTop = aiResponseContainer.scrollHeight;
+        }
+
+        chatSendBtn.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendChatMessage();
+        });
+    </script>
+</body>
+
+</html>
