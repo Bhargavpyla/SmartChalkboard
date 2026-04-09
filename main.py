@@ -98,23 +98,25 @@ async def solve_math_problem(file: UploadFile = File(...)):
         # Clean up any accidental LaTeX/MathJax delimiters if AI still uses them
         clean_text = clean_text.replace("$$", "").replace("$", "")
         
-        # Initialize the stateful Chat memory
-        current_chat = client.chats.create(model='gemini-2.5-flash')
-        try:
-            current_chat.send_message([PROMPT, img])
-        except:
-            # If the specific GenAI architecture denies multimodal objects in chats,
-            # fallback to seeding the chat memory with pure text context!
-            fallback_prompt = (
-                f"{PROMPT}\n\n"
-                f"[SYSTEM NOTE: The user provided an image. You successfully processed it. "
-                f"Here is your own generated step-by-step response to use as active context for their follow-up questions:]\n\n"
-                f"{clean_text}"
-            )
-            try:
-                current_chat.send_message(fallback_prompt)
-            except:
-                pass
+        # Initialize the stateful Chat memory without an extra API call
+        from google.genai import types
+        
+        fallback_prompt = (
+            f"{PROMPT}\n\n"
+            f"[SYSTEM NOTE: The user provided an image. You successfully processed it. "
+            f"Here is your own generated step-by-step response to use as active context for their follow-up questions:]\n\n"
+            f"{clean_text}"
+        )
+        
+        history = [
+            types.Content(role="user", parts=[types.Part.from_text(text=fallback_prompt)]),
+            types.Content(role="model", parts=[types.Part.from_text(text=response.text)])
+        ]
+        
+        current_chat = client.chats.create(
+            model='gemini-2.5-flash',
+            history=history
+        )
         
         return JSONResponse(content={"markdown": clean_text, "topic": topic})
         
