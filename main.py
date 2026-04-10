@@ -1,5 +1,6 @@
 import os
 import io
+import time
 from fastapi import FastAPI, File, UploadFile, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -21,6 +22,19 @@ if not api_key:
     raise RuntimeError("GEMINI_API_KEY not found in environment variables. Please set it in a .env file.")
 
 client = genai.Client(api_key=api_key)
+
+def retry_api_call(func, *args, max_retries=3, delay_seconds=2, **kwargs):
+    """Simple exponential backoff for rate limits and high demand errors."""
+    for attempt in range(max_retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            if attempt < max_retries - 1:
+                err_str = str(e)
+                if "503" in err_str or "429" in err_str or "UNAVAILABLE" in err_str:
+                    time.sleep(delay_seconds * (2 ** attempt))
+                    continue
+            raise
 
 # The prompt assigned for the persona
 PROMPT = (
@@ -64,7 +78,8 @@ async def solve_math_problem(file: UploadFile = File(...)):
         
         # Use simple Generation Config to enforce JSON
         import json
-        response = client.models.generate_content(
+        response = retry_api_call(
+            client.models.generate_content,
             model='gemini-2.5-flash',
             contents=[PROMPT, img],
             config=genai.types.GenerateContentConfig(
@@ -133,7 +148,7 @@ async def send_chat_message(msg: ChatMessage):
         return JSONResponse(content={"error": "Start by capturing a problem first!"}, status_code=400)
     
     try:
-        response = current_chat.send_message(msg.message)
+        response = retry_api_call(current_chat.send_message, msg.message)
         
         # Try to parse the response if the model is still returning JSON dict instances natively!
         import json
